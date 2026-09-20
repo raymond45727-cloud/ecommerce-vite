@@ -32,19 +32,23 @@ const signin = async () => {
 </script>
 
 <template>
-  <div class="login-wrapper d-flex align-items-center justify-content-center min-vh-100 w-100">
-    <div class="login-card p-4 p-sm-5 rounded-4 border border-secondary border-opacity-25 shadow-lg w-100">
+  <div
+    class="login-wrapper d-flex align-items-center justify-content-center min-vh-100 w-100"
+  >
+    <div
+      class="login-card p-4 p-sm-5 rounded-4 border border-secondary border-opacity-25 shadow-lg w-100"
+    >
       <form @submit.prevent="signin">
-        
         <div class="text-center mb-4">
-          <div class="brand-icon bg-primary bg-opacity-20 text-primary-glow rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+          <div
+            class="brand-icon bg-primary bg-opacity-20 text-primary-glow rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+          >
             <i class="bi bi-shield-lock-fill fs-3"></i>
           </div>
           <h1 class="h4 fw-bold mb-1 text-light">後台管理系統</h1>
           <p class="text-secondary small mb-0">請輸入管理者帳號密碼</p>
         </div>
 
-        
         <div class="form-floating mb-3">
           <input
             type="email"
@@ -54,7 +58,9 @@ const signin = async () => {
             v-model="user.username"
             required
           />
-          <label for="floatingInput" class="text-secondary">Email address</label>
+          <label for="floatingInput" class="text-secondary"
+            >Email address</label
+          >
         </div>
 
         <div class="form-floating mb-3">
@@ -69,39 +75,31 @@ const signin = async () => {
           <label for="floatingPassword" class="text-secondary">Password</label>
         </div>
 
-        <div class="form-check text-start mb-4">
-          <input
-            class="form-check-input dark-checkbox"
-            type="checkbox"
-            id="rememberMe"
-          />
-          <label class="form-check-label text-secondary small" for="rememberMe">
-            記住我的登入狀態
-          </label>
-        </div>
-
-        
-        <button 
-          class="btn btn-primary-custom w-100 py-2 fw-medium rounded-3 d-flex align-items-center justify-content-center gap-2" 
+        <button
+          class="btn btn-primary-custom w-100 py-2 fw-medium rounded-3 d-flex align-items-center justify-content-center gap-2"
           type="submit"
           :disabled="isLoading"
         >
-          <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status"></span>
-          <span>{{ isLoading ? '登入中...' : '登入系統' }}</span>
+          <span
+            v-if="isLoading"
+            class="spinner-border spinner-border-sm"
+            role="status"
+          ></span>
+          <span>{{ isLoading ? "登入中..." : "登入系統" }}</span>
         </button>
 
-        <p class="mt-4 mb-0 text-center text-secondary small">&copy; 2026 E-Commerce Admin</p>
+        <p class="mt-4 mb-0 text-center text-secondary small">
+          &copy; 2026 E-Commerce Admin
+        </p>
       </form>
     </div>
   </div>
 </template>
 
 <style scoped>
-
 .login-wrapper {
   background-color: #0f172a; /* Slate 900 */
 }
-
 
 .login-card {
   max-width: 400px;
@@ -116,7 +114,6 @@ const signin = async () => {
   color: #818cf8;
 }
 
-
 .dark-input {
   background-color: #0f172a !important;
   border-color: #334155 !important;
@@ -127,13 +124,11 @@ const signin = async () => {
   box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25) !important;
 }
 
-
 .form-floating > .form-control:focus ~ label,
 .form-floating > .form-control:not(:placeholder-shown) ~ label {
   background-color: transparent;
   color: #94a3b8;
 }
-
 
 .btn-primary-custom {
   background-color: #4f46e5;
