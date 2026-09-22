@@ -24,82 +24,77 @@ const logout = async () => {
 
 <template>
   <div
-    class="sidebar border-end border-secondary border-opacity-10 col-md-3 col-lg-2 p-0 dark-sidebar"
+    class="sidebar border-end border-secondary border-opacity-10 col-md-3 col-lg-2 p-0 dark-sidebar offcanvas-md offcanvas-start"
+    tabindex="-1"
+    id="sidebarMenu"
+    aria-labelledby="sidebarMenuLabel"
   >
     <div
-      class="offcanvas-md offcanvas-end dark-sidebar"
-      tabindex="-1"
-      id="sidebarMenu"
-      aria-labelledby="sidebarMenuLabel"
+      class="offcanvas-header border-bottom border-secondary border-opacity-25 px-4 py-3"
     >
-      <div
-        class="offcanvas-header border-bottom border-secondary border-opacity-25"
+      <h5 class="offcanvas-title text-light fw-bold" id="sidebarMenuLabel">
+        商城管理後台
+      </h5>
+      <button
+        type="button"
+        class="btn-close btn-close-white"
+        data-bs-dismiss="offcanvas"
+        data-bs-target="#sidebarMenu"
+        aria-label="Close"
+      ></button>
+    </div>
+
+    <div
+      class="offcanvas-body d-md-flex flex-column p-3 pt-lg-4 overflow-y-auto"
+    >
+      <h6
+        class="sidebar-heading px-3 mt-2 mb-2 text-secondary text-uppercase fw-semibold fs-7"
       >
-        <h5 class="offcanvas-title text-light fw-bold" id="sidebarMenuLabel">
-          商城管理後台
-        </h5>
-        <button
-          type="button"
-          class="btn-close btn-close-white"
-          data-bs-dismiss="offcanvas"
-          data-bs-target="#sidebarMenu"
-          aria-label="Close"
-        ></button>
-      </div>
+        <span>管理員</span>
+      </h6>
+      <ul class="nav flex-column mb-3 gap-1">
+        <li class="nav-item">
+          <router-link
+            class="nav-link custom-nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3"
+            to="/admin/products"
+          >
+            <i class="fas fa-box-open fa-fw fs-5"></i>
+            <span>產品列表</span>
+          </router-link>
+        </li>
+      </ul>
 
-      <div
-        class="offcanvas-body d-md-flex flex-column p-3 pt-lg-4 overflow-y-auto"
+      <h6
+        class="sidebar-heading px-3 mt-3 mb-2 text-secondary text-uppercase fw-semibold fs-7"
       >
-        <h6
-          class="sidebar-heading px-3 mt-2 mb-2 text-secondary text-uppercase fw-semibold fs-7"
-        >
-          <span>管理員</span>
-        </h6>
-        <ul class="nav flex-column mb-3 gap-1">
-          <li class="nav-item">
-            <router-link
-              class="nav-link custom-nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3"
-              to="/admin/products"
-            >
-              <i class="fas fa-box-open fa-fw fs-5"></i>
-              <span>產品列表</span>
-            </router-link>
-          </li>
-        </ul>
+        <span>模擬功能</span>
+      </h6>
+      <ul class="nav flex-column mb-auto gap-1">
+        <li class="nav-item">
+          <router-link
+            class="nav-link custom-nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3"
+            to="/admin/customer_order"
+          >
+            <i class="fas fa-shopping-cart fa-fw fs-5"></i>
+            <span>模擬訂單</span>
+          </router-link>
+        </li>
+      </ul>
 
-        <h6
-          class="sidebar-heading px-3 mt-3 mb-2 text-secondary text-uppercase fw-semibold fs-7"
-        >
-          <span>模擬功能</span>
-        </h6>
-        <ul class="nav flex-column mb-auto gap-1">
-          <li class="nav-item">
-            <router-link
-              class="nav-link custom-nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3"
-              to="/admin/customer_order"
-            >
-              <i class="fas fa-shopping-cart fa-fw fs-5"></i>
-              <span>模擬訂單</span>
-            </router-link>
-          </li>
-        </ul>
+      <hr class="my-3 border-secondary border-opacity-25" />
 
-        <hr class="my-3 border-secondary border-opacity-25" />
-
-        <!-- 登出按鈕 -->
-        <ul class="nav flex-column">
-          <li class="nav-item">
-            <a
-              class="nav-link logout-link d-flex align-items-center gap-3 px-3 py-2 rounded-3"
-              href="#"
-              @click.prevent="logout"
-            >
-              <i class="fas fa-sign-out-alt fa-fw fs-5"></i>
-              <span>登出</span>
-            </a>
-          </li>
-        </ul>
-      </div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a
+            class="nav-link logout-link d-flex align-items-center gap-3 px-3 py-2 rounded-3"
+            href="#"
+            @click.prevent="logout"
+          >
+            <i class="fas fa-sign-out-alt fa-fw fs-5"></i>
+            <span>登出</span>
+          </a>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
@@ -107,7 +102,12 @@ const logout = async () => {
 <style scoped>
 .dark-sidebar {
   background-color: #0f172a !important;
-  min-height: 100vh;
+}
+
+@media (min-width: 768px) {
+  .dark-sidebar {
+    min-height: calc(100vh - 56px);
+  }
 }
 
 .fs-7 {
