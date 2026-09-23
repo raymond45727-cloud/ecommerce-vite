@@ -3,6 +3,8 @@
 本專案為基於 Vue 3 開發的電商後台管理系統，整合六角學院 API，提供完整的商品管理、訂單模擬與響應式操作體驗。
 
 **[線上展示網站](https://raymond45727-cloud.github.io/ecommerce-vite/)**
+測試用帳號:zxcvb@gmail.com
+測試用密碼:123456
 
 ##  使用技術 (Tech Stack)
 * **前端框架**：Vue 3 (Vue Router)
