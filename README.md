@@ -1,5 +1,17 @@
-# Vue 3 + Vite
+# 商城管理後台 (Vue 3 + Vite)
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+本專案為基於 Vue 3 開發的電商後台管理系統，整合六角學院 API，提供完整的商品管理、訂單模擬與響應式操作體驗。
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+**[線上展示網站](https://raymond45727-cloud.github.io/ecommerce-vite/)**
+
+##  使用技術 (Tech Stack)
+* **前端框架**：Vue 3 (Vue Router)
+* **UI 框架與樣式**：Bootstrap 5, SCSS (RWD 響應式設計)
+* **API 串接**：Axios, RESTful API
+* **建置工具**：Vite
+* **版本控制與部署**：Git, GitHub Pages
+
+## 主要功能
+* **商品管理**：分頁取得商品列表、新增/編輯/刪除商品資訊。
+* **響應式介面 (RWD)**：針對 Mobile 手機版與 Desktop 電腦版進行排版優化。
+* **狀態與路由控管**：使用 Vue Router 管理後台頁面切換。
