@@ -15,6 +15,10 @@ const router = createRouter({
   routes: [
     {
       path: "/",
+      redirect: "/login",
+    },
+    {
+      path: "/store",
       name: "Storefront",
       component: Storefront,
     },

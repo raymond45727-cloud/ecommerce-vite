@@ -86,7 +86,7 @@ async function payOrder() {
 
 <template>
   <div class="checkout-page">
-    <header class="checkout-header"><a class="checkout-brand" href="/ecommerce-vite/">NEXUS 裝備研究所 <small>GEAR UP · PLAY BETTER</small></a><a href="/ecommerce-vite/" class="back-link">← 返回裝備商店</a></header>
+    <header class="checkout-header"><a class="checkout-brand" href="/ecommerce-vite/store">NEXUS 裝備研究所 <small>GEAR UP · PLAY BETTER</small></a><a href="/ecommerce-vite/store" class="back-link">← 返回裝備商店</a></header>
     <main class="checkout-main">
       <section v-if="order" class="success-card">
         <span class="success-icon">✳</span><p class="checkout-eyebrow">ORDER CONFIRMED</p>
@@ -96,7 +96,7 @@ async function payOrder() {
         <p class="payment-status" :class="{ paid: order.isPaid }">{{ order.isPaid ? "付款已完成" : "訂單已建立，尚未付款" }}</p>
         <p v-if="paymentError" class="form-error" role="alert">{{ paymentError }}</p>
         <button v-if="!order.isPaid" class="primary-button" :disabled="isPaying" @click="payOrder">{{ isPaying ? "付款處理中…" : "前往模擬付款" }} <span>→</span></button>
-        <button v-else class="primary-button" @click="router.push('/')">回到首頁 <span>→</span></button>
+        <button v-else class="primary-button" @click="router.push('/store')">回到裝備商店 <span>→</span></button>
       </section>
       <template v-else>
         <div class="checkout-title"><p class="checkout-eyebrow">A FEW DETAILS, THEN IT'S YOURS</p><h1>確認裝備訂單。</h1><p>確認收件與配送資訊，準備迎接你的新裝備。</p></div>
@@ -127,7 +127,7 @@ async function payOrder() {
             <div class="summary-line"><span>商品小計</span><strong>NT$ {{ subtotal.toLocaleString() }}</strong></div><div class="summary-line"><span>運費</span><strong>{{ shipping === 0 ? "免運" : `NT$ ${shipping}` }}</strong></div><p class="shipping-hint">{{ shipping === 0 ? "已享有免運優惠" : `再消費 NT$ ${(1500 - subtotal).toLocaleString()} 即可享免運` }}</p><div class="summary-total"><span>應付總額</span><strong>NT$ {{ total.toLocaleString() }}</strong></div>
           </aside>
         </div>
-        <div v-else class="empty-checkout"><span>✳</span><h2>裝備清單裡還沒有商品。</h2><p>先到商店挑選想升級的電競裝備。</p><button class="primary-button" @click="router.push('/')">回到裝備商店 <span>→</span></button></div>
+        <div v-else class="empty-checkout"><span>✳</span><h2>裝備清單裡還沒有商品。</h2><p>先到商店挑選想升級的電競裝備。</p><button class="primary-button" @click="router.push('/store')">回到裝備商店 <span>→</span></button></div>
       </template>
     </main>
     <footer class="checkout-footer">© 2025 NEXUS GEAR LAB <span>GEAR UP · PLAY BETTER.</span></footer>
