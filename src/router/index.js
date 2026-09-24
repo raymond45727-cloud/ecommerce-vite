@@ -5,12 +5,24 @@ import Dashboard from "../components/Dashboard.vue";
 import Products from "../components/pages/Products.vue";
 import OrdersDemo from "../components/pages/OrdersDemo.vue";
 import CustomerCheckout from "../components/pages/CustomerCheckout.vue";
+import Storefront from "../components/pages/Storefront.vue";
+import StoreCheckout from "../components/pages/StoreCheckout.vue";
 
 import axios from "axios";
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: "/",
+      name: "Storefront",
+      component: Storefront,
+    },
+    {
+      path: "/checkout",
+      name: "StoreCheckout",
+      component: StoreCheckout,
+    },
     
     {
       path: "/login",
