@@ -6,9 +6,9 @@
 
 **[線上展示網站後台](https://raymond45727-cloud.github.io/ecommerce-vite/)**
 
-**測試用帳號:zxcvb@gmail.com**
+**後台測試用帳號:zxcvb@gmail.com**
 
-**測試用密碼:123456**
+**後台測試用密碼:123456**
 
 ##  使用技術 (Tech Stack)
 * **前端框架**：Vue 3 (Vue Router)
