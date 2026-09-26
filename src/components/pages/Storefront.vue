@@ -20,7 +20,7 @@ const visibleProducts = computed(() => products.value.filter((product) =>
   product.name.toLowerCase().includes(search.value.trim().toLowerCase()),
 ));
 const cartCount = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0));
-const cartTotal = computed(() => cart.value.reduce((sum, item) => sum + item.price * item.quantity, 0));
+const cartTotal = ref(0);
 const apiPath = (path) => `${import.meta.env.VITE_APP_URL}/api/${import.meta.env.VITE_APP_PATH}/${path}`;
 function showNotice(message) {
   notice.value = message;
@@ -64,18 +64,23 @@ async function loadCart() {
   try {
     const response = await axios.get(apiPath("cart"));
     if (!response.data.success) throw new Error(response.data.message || "購物車載入失敗");
-    const rows = response.data.data?.carts || [];
+    const cartData = response.data.data || {};
+    const rows = cartData.carts || [];
     cart.value = rows.map((row) => ({
       id: row.product.id,
       cartId: row.id,
       name: row.product.title,
       category: row.product.category,
       price: row.product.price,
+      lineTotal: Number(row.final_total ?? row.total ?? row.product.price * row.qty),
       image: row.product.imageUrl || row.product.imagesUrl?.[0] || "",
       quantity: row.qty,
     }));
+    cartTotal.value = Number(cartData.final_total ?? cartData.total ?? cart.value.reduce((sum, item) => sum + item.lineTotal, 0));
     apiError.value = "";
   } catch (error) {
+    cart.value = [];
+    cartTotal.value = 0;
     apiError.value = error.response?.data?.message || error.message || "暫時無法連線到購物車服務";
     showNotice(`購物車服務連線失敗：${apiError.value}`);
   }
@@ -140,7 +145,7 @@ onUnmounted(() => window.removeEventListener("focus", loadProducts));
     <footer id="footer" class="store-footer"><a class="brand footer-brand" href="#top"><span class="brand-mark">N</span><span>NEXUS 裝備研究所<small>GEAR UP · PLAY BETTER</small></span></a><p>精準操控，穩定輸出。<br />準備好迎接下一場勝利。</p><span>© 2025 NEXUS GEAR LAB</span></footer>
 
     <Transition name="toast"><div v-if="notice" class="toast-message">✳ &nbsp;{{ notice }}</div></Transition>
-    <Transition name="fade"><div v-if="cartOpen" class="drawer-backdrop" @click.self="cartOpen = false"><aside class="cart-drawer"><div class="drawer-heading"><div><p class="eyebrow">YOUR LOADOUT</p><h2>裝備清單 <span>({{ cartCount }})</span></h2></div><button class="close-button" @click="cartOpen = false" aria-label="關閉裝備清單">×</button></div><div v-if="cart.length" class="cart-items"><article v-for="item in cart" :key="item.id" class="cart-item"><img :src="imageUrl(item.image, 220)" :alt="item.name" /><div class="cart-item-copy"><span>{{ item.category }}</span><h3>{{ item.name }}</h3><strong>NT$ {{ (item.price * item.quantity).toLocaleString() }}</strong><div class="quantity"><button @click="changeQuantity(item, -1)">−</button><span>{{ item.quantity }}</span><button @click="changeQuantity(item, 1)">＋</button></div></div></article></div><div v-else class="cart-empty"><span>✳</span><p>裝備清單還是空的。<br />挑選合適裝備，升級你的遊戲體驗。</p><button @click="cartOpen = false">探索電競裝備 →</button></div><div v-if="cart.length" class="cart-summary"><div><span>小計</span><strong>NT$ {{ cartTotal.toLocaleString() }}</strong></div><small>滿 $1,500 即享免運</small><button @click="router.push('/checkout')">前往結帳 <span>→</span></button></div></aside></div></Transition>
+    <Transition name="fade"><div v-if="cartOpen" class="drawer-backdrop" @click.self="cartOpen = false"><aside class="cart-drawer"><div class="drawer-heading"><div><p class="eyebrow">YOUR LOADOUT</p><h2>裝備清單 <span>({{ cartCount }})</span></h2></div><button class="close-button" @click="cartOpen = false" aria-label="關閉裝備清單">×</button></div><div v-if="cart.length" class="cart-items"><article v-for="item in cart" :key="item.id" class="cart-item"><img :src="imageUrl(item.image, 220)" :alt="item.name" /><div class="cart-item-copy"><span>{{ item.category }}</span><h3>{{ item.name }}</h3><strong>NT$ {{ item.lineTotal.toLocaleString() }}</strong><div class="quantity"><button @click="changeQuantity(item, -1)">−</button><span>{{ item.quantity }}</span><button @click="changeQuantity(item, 1)">＋</button></div></div></article></div><div v-else class="cart-empty"><span>✳</span><p>裝備清單還是空的。<br />挑選合適裝備，升級你的遊戲體驗。</p><button @click="cartOpen = false">探索電競裝備 →</button></div><div v-if="cart.length" class="cart-summary"><div><span>小計</span><strong>NT$ {{ cartTotal.toLocaleString() }}</strong></div><small>結帳金額依購物車 API 計算</small><button @click="router.push('/checkout')">前往結帳 <span>→</span></button></div></aside></div></Transition>
   </div>
 </template>
 

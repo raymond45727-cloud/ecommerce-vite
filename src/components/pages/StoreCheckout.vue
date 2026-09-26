@@ -5,6 +5,7 @@ import axios from "axios";
 
 const router = useRouter();
 const cart = ref([]);
+const cartTotal = ref(0);
 const isLoadingCart = ref(true);
 const cartError = ref("");
 const order = ref(null);
@@ -14,9 +15,8 @@ const submitError = ref("");
 const paymentError = ref("");
 const form = reactive({ name: "", email: "", phone: "", city: "", address: "", delivery: "home", payment: "cod", note: "" });
 const errors = reactive({ name: "", email: "", phone: "", city: "", address: "" });
-const subtotal = computed(() => cart.value.reduce((sum, item) => sum + item.price * item.quantity, 0));
-const shipping = computed(() => subtotal.value >= 1500 ? 0 : form.delivery === "store" ? 60 : 80);
-const total = computed(() => subtotal.value + shipping.value);
+const subtotal = computed(() => cartTotal.value);
+const total = computed(() => cartTotal.value);
 const apiPath = (path) => `${import.meta.env.VITE_APP_URL}/api/${import.meta.env.VITE_APP_PATH}/${path}`;
 const imageUrl = (url) => !url ? "" : url.startsWith("http") ? url : `https://images.unsplash.com/${url}?auto=format&fit=crop&w=220&q=80`;
 
@@ -26,17 +26,21 @@ async function loadCart() {
   try {
     const response = await axios.get(apiPath("cart"));
     if (!response.data.success) throw new Error(response.data.message || "無法載入購物車。");
-    cart.value = (response.data.data?.carts || []).map((row) => ({
+    const cartData = response.data.data || {};
+    cart.value = (cartData.carts || []).map((row) => ({
       id: row.product.id,
       cartId: row.id,
       name: row.product.title,
       category: row.product.category,
       price: row.product.price,
+      lineTotal: Number(row.final_total ?? row.total ?? row.product.price * row.qty),
       image: row.product.imageUrl || row.product.imagesUrl?.[0] || "",
       quantity: row.qty,
     }));
+    cartTotal.value = Number(cartData.final_total ?? cartData.total ?? cart.value.reduce((sum, item) => sum + item.lineTotal, 0));
   } catch (error) {
     cart.value = [];
+    cartTotal.value = 0;
     cartError.value = error.response?.data?.message || error.message || "購物車載入失敗，請稍後再試。";
   } finally {
     isLoadingCart.value = false;
@@ -71,7 +75,6 @@ async function submitOrder() {
     const message = [
       `配送方式：${form.delivery === "home" ? "宅配到府" : "超商取貨"}`,
       `付款方式：${form.payment === "cod" ? "貨到付款" : "銀行轉帳"}`,
-      `運費：NT$ ${shipping.value}`,
       form.note && `備註：${form.note}`,
     ].filter(Boolean).join("；");
     const response = await axios.post(apiPath("order"), {
@@ -85,8 +88,9 @@ async function submitOrder() {
     } catch {
       // Keep the API-created order confirmation even if the optional detail request fails.
     }
-    order.value = { id: response.data.orderId, total: actualOrder?.total ?? response.data.total ?? subtotal.value, isPaid: actualOrder?.is_paid ?? false };
+    order.value = { id: response.data.orderId, total: actualOrder?.total ?? response.data.total ?? cartTotal.value, isPaid: actualOrder?.is_paid ?? false };
     cart.value = [];
+    cartTotal.value = 0;
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
     submitError.value = error.response?.data?.message || error.message || "訂單送出失敗，請稍後再試。";
@@ -138,8 +142,8 @@ async function payOrder() {
               <label class="full-field" :class="{ invalid: errors.address }">收件地址<input v-model.trim="form.address" autocomplete="street-address" placeholder="請填寫完整地址" :aria-invalid="!!errors.address" @blur="validateField('address')" @input="clearFieldError('address')" /><span v-if="errors.address" class="field-error">{{ errors.address }}</span></label>
             </div></section>
             <section class="form-section"><div class="form-heading"><span>02</span><h2>配送方式</h2></div><div class="option-list">
-              <label class="choice-card" :class="{ selected: form.delivery === 'home' }"><input v-model="form.delivery" type="radio" value="home" /><span><strong>宅配到府</strong><small>配送至指定地址，約 2–4 個工作天</small></span><b>{{ shipping === 0 ? "免運" : "NT$ 80" }}</b></label>
-              <label class="choice-card" :class="{ selected: form.delivery === 'store' }"><input v-model="form.delivery" type="radio" value="store" /><span><strong>超商取貨</strong><small>取貨資訊將透過 Email 通知</small></span><b>{{ shipping === 0 ? "免運" : "NT$ 60" }}</b></label>
+              <label class="choice-card" :class="{ selected: form.delivery === 'home' }"><input v-model="form.delivery" type="radio" value="home" /><span><strong>宅配到府</strong><small>配送至指定地址，約 2–4 個工作天</small></span><b>費用未串接</b></label>
+              <label class="choice-card" :class="{ selected: form.delivery === 'store' }"><input v-model="form.delivery" type="radio" value="store" /><span><strong>超商取貨</strong><small>取貨資訊將透過 Email 通知</small></span><b>費用未串接</b></label>
             </div></section>
             <section class="form-section"><div class="form-heading"><span>03</span><h2>付款方式</h2></div><div class="option-list">
               <label class="choice-card" :class="{ selected: form.payment === 'cod' }"><input v-model="form.payment" type="radio" value="cod" /><span><strong>貨到付款</strong><small>模擬訂單建立後可進行模擬付款</small></span></label>
@@ -151,8 +155,8 @@ async function payOrder() {
             <p class="secure-note">✳ &nbsp;送出訂單即代表你同意 NEXUS GEAR LAB 的購物須知。</p>
           </form>
           <aside class="order-summary"><p class="checkout-eyebrow">YOUR ORDER</p><h2>訂單摘要 <span>({{ cart.reduce((sum, item) => sum + item.quantity, 0) }} 件)</span></h2>
-            <div class="summary-items"><article v-for="item in cart" :key="item.id" class="summary-item"><div class="summary-image"><img :src="imageUrl(item.image)" :alt="item.name" /><span>{{ item.quantity }}</span></div><div class="summary-item-copy"><strong>{{ item.name }}</strong><small>{{ item.category }}</small></div><b>NT$ {{ (item.price * item.quantity).toLocaleString() }}</b></article></div>
-            <div class="summary-line"><span>商品小計</span><strong>NT$ {{ subtotal.toLocaleString() }}</strong></div><div class="summary-line"><span>運費</span><strong>{{ shipping === 0 ? "免運" : `NT$ ${shipping}` }}</strong></div><p class="shipping-hint">{{ shipping === 0 ? "已享有免運優惠" : `再消費 NT$ ${(1500 - subtotal).toLocaleString()} 即可享免運` }}</p><div class="summary-total"><span>應付總額</span><strong>NT$ {{ total.toLocaleString() }}</strong></div>
+            <div class="summary-items"><article v-for="item in cart" :key="item.id" class="summary-item"><div class="summary-image"><img :src="imageUrl(item.image)" :alt="item.name" /><span>{{ item.quantity }}</span></div><div class="summary-item-copy"><strong>{{ item.name }}</strong><small>{{ item.category }}</small></div><b>NT$ {{ item.lineTotal.toLocaleString() }}</b></article></div>
+            <div class="summary-line"><span>商品小計（依購物車 API）</span><strong>NT$ {{ subtotal.toLocaleString() }}</strong></div><p class="shipping-hint">此展示版的運費尚未串接，訂單金額以購物車 API 回傳金額為準。</p><div class="summary-total"><span>API 訂單金額</span><strong>NT$ {{ total.toLocaleString() }}</strong></div>
           </aside>
         </div>
         <div v-else class="empty-checkout"><span>✳</span><h2>裝備清單裡還沒有商品。</h2><p>先到商店挑選想升級的電競裝備。</p><button class="primary-button" @click="router.push('/store')">回到裝備商店 <span>→</span></button></div>
