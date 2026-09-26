@@ -14,6 +14,7 @@ const search = ref("");
 const cartOpen = ref(false);
 const notice = ref("");
 const cart = ref([]);
+const isCartUpdating = ref(false);
 const apiError = ref("");
 const visibleProducts = computed(() => products.value.filter((product) =>
   (activeCategory.value === allCategory || product.category === activeCategory.value) &&
@@ -86,19 +87,25 @@ async function loadCart() {
   }
 }
 async function addToCart(product) {
+  if (isCartUpdating.value) return;
   if (apiError.value) return showNotice("目前無法連線到商店服務，請稍後再試。");
   try {
+    isCartUpdating.value = true;
     const response = await axios.post(apiPath("cart"), { data: { product_id: product.id, qty: 1 } });
     if (!response.data.success) throw new Error(response.data.message || "加入購物車失敗");
     await loadCart();
     showNotice(`${product.name} 已加入購物袋`);
   } catch (error) {
     showNotice(error.response?.data?.message || error.message || "加入購物袋失敗");
+  } finally {
+    isCartUpdating.value = false;
   }
 }
 async function changeQuantity(item, amount) {
+  if (isCartUpdating.value) return;
   const quantity = item.quantity + amount;
   try {
+    isCartUpdating.value = true;
     const response = quantity <= 0
       ? await axios.delete(apiPath(`cart/${item.cartId}`))
       : await axios.put(apiPath(`cart/${item.cartId}`), { data: { product_id: item.id, qty: quantity } });
@@ -106,6 +113,8 @@ async function changeQuantity(item, amount) {
     await loadCart();
   } catch (error) {
     showNotice(error.response?.data?.message || "更新購物車失敗");
+  } finally {
+    isCartUpdating.value = false;
   }
 }
 const imageUrl = (id, width = 700) => !id ? "" : id.startsWith("http") ? id : `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
@@ -136,7 +145,7 @@ onUnmounted(() => window.removeEventListener("focus", loadProducts));
 
       <section class="shop-section" id="shop"><div class="section-heading"><div><p class="eyebrow">GEAR UP · STAY SHARP</p><h2>為你的<span>勝利裝備。</span></h2><p class="section-desc">從桌面到賽場，找到讓操作更到位的裝備。</p></div><a href="#shop" class="all-link">探索全部裝備 <span>→</span></a></div>
         <div class="shop-toolbar"><div class="category-tabs"><button v-for="category in categories" :key="category" :class="{ active: activeCategory === category }" @click="activeCategory = category">{{ category }}</button></div><span class="result-count">{{ visibleProducts.length }} 件裝備</span></div>
-        <div v-if="visibleProducts.length" class="product-grid"><article v-for="(product, index) in visibleProducts" :key="product.id" class="product-card" :style="{ '--delay': `${index * 55}ms` }"><div class="product-image-wrap" :style="{ backgroundColor: product.color + '22' }"><img :src="imageUrl(product.image)" :alt="product.name" loading="lazy" /><span class="product-tag">{{ product.tag }}</span><button class="quick-add" @click="addToCart(product)">＋ 加入購物袋</button></div><div class="product-info"><div><span class="product-category">{{ product.category }}</span><h3>{{ product.name }}</h3></div><div class="product-price"><strong>NT$ {{ product.price.toLocaleString() }}</strong><del>{{ product.original.toLocaleString() }}</del></div></div></article></div>
+        <div v-if="visibleProducts.length" class="product-grid"><article v-for="(product, index) in visibleProducts" :key="product.id" class="product-card" :style="{ '--delay': `${index * 55}ms` }"><div class="product-image-wrap" :style="{ backgroundColor: product.color + '22' }"><img :src="imageUrl(product.image)" :alt="product.name" loading="lazy" /><span class="product-tag">{{ product.tag }}</span><button class="quick-add" :disabled="isCartUpdating" :aria-busy="isCartUpdating" @click="addToCart(product)">{{ isCartUpdating ? "處理中..." : "＋ 加入購物袋" }}</button></div><div class="product-info"><div><span class="product-category">{{ product.category }}</span><h3>{{ product.name }}</h3></div><div class="product-price"><strong>NT$ {{ product.price.toLocaleString() }}</strong><del>{{ product.original.toLocaleString() }}</del></div></div></article></div>
         <div v-else class="empty-state"><template v-if="apiError">{{ apiError }}<br /><button class="reload-products" @click="loadProducts">重新載入商品</button></template><template v-else>找不到符合的裝備，試試其他關鍵字或分類。</template></div>
         <div class="collection-note"><span>✳</span><p>ENGINEERED FOR YOUR NEXT VICTORY.</p><span>✳</span></div>
       </section>
@@ -145,7 +154,7 @@ onUnmounted(() => window.removeEventListener("focus", loadProducts));
     <footer id="footer" class="store-footer"><a class="brand footer-brand" href="#top"><span class="brand-mark">N</span><span>NEXUS 裝備研究所<small>GEAR UP · PLAY BETTER</small></span></a><p>精準操控，穩定輸出。<br />準備好迎接下一場勝利。</p><span>© 2025 NEXUS GEAR LAB</span></footer>
 
     <Transition name="toast"><div v-if="notice" class="toast-message">✳ &nbsp;{{ notice }}</div></Transition>
-    <Transition name="fade"><div v-if="cartOpen" class="drawer-backdrop" @click.self="cartOpen = false"><aside class="cart-drawer"><div class="drawer-heading"><div><p class="eyebrow">YOUR LOADOUT</p><h2>裝備清單 <span>({{ cartCount }})</span></h2></div><button class="close-button" @click="cartOpen = false" aria-label="關閉裝備清單">×</button></div><div v-if="cart.length" class="cart-items"><article v-for="item in cart" :key="item.id" class="cart-item"><img :src="imageUrl(item.image, 220)" :alt="item.name" /><div class="cart-item-copy"><span>{{ item.category }}</span><h3>{{ item.name }}</h3><strong>NT$ {{ item.lineTotal.toLocaleString() }}</strong><div class="quantity"><button @click="changeQuantity(item, -1)">−</button><span>{{ item.quantity }}</span><button @click="changeQuantity(item, 1)">＋</button></div></div></article></div><div v-else class="cart-empty"><span>✳</span><p>裝備清單還是空的。<br />挑選合適裝備，升級你的遊戲體驗。</p><button @click="cartOpen = false">探索電競裝備 →</button></div><div v-if="cart.length" class="cart-summary"><div><span>小計</span><strong>NT$ {{ cartTotal.toLocaleString() }}</strong></div><small>結帳金額依購物車 API 計算</small><button @click="router.push('/checkout')">前往結帳 <span>→</span></button></div></aside></div></Transition>
+    <Transition name="fade"><div v-if="cartOpen" class="drawer-backdrop" @click.self="cartOpen = false"><aside class="cart-drawer"><div class="drawer-heading"><div><p class="eyebrow">YOUR LOADOUT</p><h2>裝備清單 <span>({{ cartCount }})</span></h2></div><button class="close-button" @click="cartOpen = false" aria-label="關閉裝備清單">×</button></div><div v-if="cart.length" class="cart-items"><article v-for="item in cart" :key="item.id" class="cart-item"><img :src="imageUrl(item.image, 220)" :alt="item.name" /><div class="cart-item-copy"><span>{{ item.category }}</span><h3>{{ item.name }}</h3><strong>NT$ {{ item.lineTotal.toLocaleString() }}</strong><div class="quantity"><button :disabled="isCartUpdating" @click="changeQuantity(item, -1)">−</button><span>{{ item.quantity }}</span><button :disabled="isCartUpdating" @click="changeQuantity(item, 1)">＋</button></div></div></article></div><div v-else class="cart-empty"><span>✳</span><p>裝備清單還是空的。<br />挑選合適裝備，升級你的遊戲體驗。</p><button @click="cartOpen = false">探索電競裝備 →</button></div><div v-if="cart.length" class="cart-summary"><div><span>小計</span><strong>NT$ {{ cartTotal.toLocaleString() }}</strong></div><small>結帳金額依購物車 API 計算</small><button :disabled="isCartUpdating" @click="router.push('/checkout')">前往結帳 <span>→</span></button></div></aside></div></Transition>
   </div>
 </template>
 
