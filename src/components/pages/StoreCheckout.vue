@@ -1,10 +1,12 @@
 <script setup>
-import { computed, nextTick, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 
 const router = useRouter();
-const cart = ref(JSON.parse(localStorage.getItem("atelier-cart") || "[]"));
+const cart = ref([]);
+const isLoadingCart = ref(true);
+const cartError = ref("");
 const order = ref(null);
 const isSubmitting = ref(false);
 const isPaying = ref(false);
@@ -17,6 +19,31 @@ const shipping = computed(() => subtotal.value >= 1500 ? 0 : form.delivery === "
 const total = computed(() => subtotal.value + shipping.value);
 const apiPath = (path) => `${import.meta.env.VITE_APP_URL}/api/${import.meta.env.VITE_APP_PATH}/${path}`;
 const imageUrl = (url) => !url ? "" : url.startsWith("http") ? url : `https://images.unsplash.com/${url}?auto=format&fit=crop&w=220&q=80`;
+
+async function loadCart() {
+  isLoadingCart.value = true;
+  cartError.value = "";
+  try {
+    const response = await axios.get(apiPath("cart"));
+    if (!response.data.success) throw new Error(response.data.message || "無法載入購物車。");
+    cart.value = (response.data.data?.carts || []).map((row) => ({
+      id: row.product.id,
+      cartId: row.id,
+      name: row.product.title,
+      category: row.product.category,
+      price: row.product.price,
+      image: row.product.imageUrl || row.product.imagesUrl?.[0] || "",
+      quantity: row.qty,
+    }));
+  } catch (error) {
+    cart.value = [];
+    cartError.value = error.response?.data?.message || error.message || "購物車載入失敗，請稍後再試。";
+  } finally {
+    isLoadingCart.value = false;
+  }
+}
+
+onMounted(loadCart);
 
 const validators = {
   name: (value) => value.trim().length >= 2 ? "" : "請輸入至少 2 個字的收件人姓名。",
@@ -59,7 +86,6 @@ async function submitOrder() {
       // Keep the API-created order confirmation even if the optional detail request fails.
     }
     order.value = { id: response.data.orderId, total: actualOrder?.total ?? response.data.total ?? subtotal.value, isPaid: actualOrder?.is_paid ?? false };
-    localStorage.removeItem("atelier-cart");
     cart.value = [];
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
@@ -100,7 +126,9 @@ async function payOrder() {
       </section>
       <template v-else>
         <div class="checkout-title"><p class="checkout-eyebrow">A FEW DETAILS, THEN IT'S YOURS</p><h1>確認裝備訂單。</h1><p>確認收件與配送資訊，準備迎接你的新裝備。</p></div>
-        <div v-if="cart.length" class="checkout-layout">
+        <div v-if="isLoadingCart" class="empty-checkout"><p>正在載入購物車…</p></div>
+        <div v-else-if="cartError" class="empty-checkout"><p class="form-error" role="alert">{{ cartError }}</p><button class="primary-button" @click="loadCart">重新載入</button></div>
+        <div v-else-if="cart.length" class="checkout-layout">
           <form class="checkout-form" novalidate @submit.prevent="submitOrder">
             <section class="form-section"><div class="form-heading"><span>01</span><h2>收件人資訊</h2></div><div class="form-grid">
               <label :class="{ invalid: errors.name }">姓名<input v-model.trim="form.name" autocomplete="name" placeholder="收件人姓名" :aria-invalid="!!errors.name" @blur="validateField('name')" @input="clearFieldError('name')" /><span v-if="errors.name" class="field-error">{{ errors.name }}</span></label>

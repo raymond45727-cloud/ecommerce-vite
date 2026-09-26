@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 
@@ -13,7 +13,7 @@ const activeCategory = ref(allCategory);
 const search = ref("");
 const cartOpen = ref(false);
 const notice = ref("");
-const cart = ref(JSON.parse(localStorage.getItem("atelier-cart") || "[]"));
+const cart = ref([]);
 const apiError = ref("");
 const visibleProducts = computed(() => products.value.filter((product) =>
   (activeCategory.value === allCategory || product.category === activeCategory.value) &&
@@ -21,7 +21,6 @@ const visibleProducts = computed(() => products.value.filter((product) =>
 ));
 const cartCount = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0));
 const cartTotal = computed(() => cart.value.reduce((sum, item) => sum + item.price * item.quantity, 0));
-watch(cart, (value) => localStorage.setItem("atelier-cart", JSON.stringify(value)), { deep: true });
 const apiPath = (path) => `${import.meta.env.VITE_APP_URL}/api/${import.meta.env.VITE_APP_PATH}/${path}`;
 function showNotice(message) {
   notice.value = message;
