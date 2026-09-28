@@ -16,12 +16,19 @@ const notice = ref("");
 const cart = ref([]);
 const isCartUpdating = ref(false);
 const apiError = ref("");
+const detailOpen = ref(false);
+const detailProduct = ref(null);
+const detailProductId = ref("");
+const detailLoading = ref(false);
+const detailError = ref("");
+const detailQuantity = ref(1);
 const visibleProducts = computed(() => products.value.filter((product) =>
   (activeCategory.value === allCategory || product.category === activeCategory.value) &&
   product.name.toLowerCase().includes(search.value.trim().toLowerCase()),
 ));
 const cartCount = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0));
 const cartTotal = ref(0);
+const detailTotal = computed(() => Number(detailProduct.value?.price || 0) * detailQuantity.value);
 const apiPath = (path) => `${import.meta.env.VITE_APP_URL}/api/${import.meta.env.VITE_APP_PATH}/${path}`;
 function showNotice(message) {
   notice.value = message;
@@ -86,20 +93,51 @@ async function loadCart() {
     showNotice(`購物車服務連線失敗：${apiError.value}`);
   }
 }
-async function addToCart(product) {
-  if (isCartUpdating.value) return;
-  if (apiError.value) return showNotice("目前無法連線到商店服務，請稍後再試。");
+async function openProductDetails(id) {
+  if (detailLoading.value) return;
+  detailProductId.value = id;
+  detailProduct.value = null;
+  detailQuantity.value = 1;
+  detailError.value = "";
+  detailOpen.value = true;
+  detailLoading.value = true;
+  try {
+    const response = await axios.get(apiPath(`product/${id}`));
+    if (!response.data.success) throw new Error(response.data.message || "無法載入商品詳情。");
+    detailProduct.value = response.data.product;
+  } catch (error) {
+    detailError.value = error.response?.data?.message || error.message || "商品詳情載入失敗，請稍後再試。";
+  } finally {
+    detailLoading.value = false;
+  }
+}
+function closeProductDetails() {
+  detailOpen.value = false;
+}
+async function addToCart(product, quantity = 1) {
+  if (isCartUpdating.value) return false;
+  if (apiError.value) {
+    showNotice("目前無法連線到商店服務，請稍後再試。");
+    return false;
+  }
   try {
     isCartUpdating.value = true;
-    const response = await axios.post(apiPath("cart"), { data: { product_id: product.id, qty: 1 } });
+    const response = await axios.post(apiPath("cart"), { data: { product_id: product.id, qty: quantity } });
     if (!response.data.success) throw new Error(response.data.message || "加入購物車失敗");
     await loadCart();
-    showNotice(`${product.name} 已加入購物袋`);
+    showNotice(`${product.name || product.title} 已加入購物袋`);
+    return true;
   } catch (error) {
-    showNotice(error.response?.data?.message || error.message || "加入購物袋失敗");
+    showNotice(error.response?.data?.message || error.message || "加入購物車失敗");
+    return false;
   } finally {
     isCartUpdating.value = false;
   }
+}
+async function addDetailToCart() {
+  if (!detailProduct.value) return;
+  const added = await addToCart(detailProduct.value, detailQuantity.value);
+  if (added) closeProductDetails();
 }
 async function changeQuantity(item, amount) {
   if (isCartUpdating.value) return;
@@ -145,7 +183,7 @@ onUnmounted(() => window.removeEventListener("focus", loadProducts));
 
       <section class="shop-section" id="shop"><div class="section-heading"><div><p class="eyebrow">GEAR UP · STAY SHARP</p><h2>為你的<span>勝利裝備。</span></h2><p class="section-desc">從桌面到賽場，找到讓操作更到位的裝備。</p></div><a href="#shop" class="all-link">探索全部裝備 <span>→</span></a></div>
         <div class="shop-toolbar"><div class="category-tabs"><button v-for="category in categories" :key="category" :class="{ active: activeCategory === category }" @click="activeCategory = category">{{ category }}</button></div><span class="result-count">{{ visibleProducts.length }} 件裝備</span></div>
-        <div v-if="visibleProducts.length" class="product-grid"><article v-for="(product, index) in visibleProducts" :key="product.id" class="product-card" :style="{ '--delay': `${index * 55}ms` }"><div class="product-image-wrap" :style="{ backgroundColor: product.color + '22' }"><img :src="imageUrl(product.image)" :alt="product.name" loading="lazy" /><span class="product-tag">{{ product.tag }}</span><button class="quick-add" :disabled="isCartUpdating" :aria-busy="isCartUpdating" @click="addToCart(product)">{{ isCartUpdating ? "處理中..." : "＋ 加入購物袋" }}</button></div><div class="product-info"><div><span class="product-category">{{ product.category }}</span><h3>{{ product.name }}</h3></div><div class="product-price"><strong>NT$ {{ product.price.toLocaleString() }}</strong><del>{{ product.original.toLocaleString() }}</del></div></div></article></div>
+        <div v-if="visibleProducts.length" class="product-grid"><article v-for="(product, index) in visibleProducts" :key="product.id" class="product-card" :style="{ '--delay': `${index * 55}ms` }"><div class="product-image-wrap" :style="{ backgroundColor: product.color + '22' }"><img :src="imageUrl(product.image)" :alt="product.name" loading="lazy" /><span class="product-tag">{{ product.tag }}</span><button class="quick-add" :disabled="isCartUpdating" :aria-busy="isCartUpdating" @click="addToCart(product)">{{ isCartUpdating ? "處理中..." : "＋ 加入購物袋" }}</button></div><div class="product-info"><div><span class="product-category">{{ product.category }}</span><h3>{{ product.name }}</h3><button type="button" class="detail-trigger" :disabled="detailLoading" @click="openProductDetails(product.id)">查看商品詳情 →</button></div><div class="product-price"><strong>NT$ {{ product.price.toLocaleString() }}</strong><del>{{ product.original.toLocaleString() }}</del></div></div></article></div>
         <div v-else class="empty-state"><template v-if="apiError">{{ apiError }}<br /><button class="reload-products" @click="loadProducts">重新載入商品</button></template><template v-else>找不到符合的裝備，試試其他關鍵字或分類。</template></div>
         <div class="collection-note"><span>✳</span><p>ENGINEERED FOR YOUR NEXT VICTORY.</p><span>✳</span></div>
       </section>
@@ -153,6 +191,39 @@ onUnmounted(() => window.removeEventListener("focus", loadProducts));
     </main>
     <footer id="footer" class="store-footer"><a class="brand footer-brand" href="#top"><span class="brand-mark">N</span><span>NEXUS 裝備研究所<small>GEAR UP · PLAY BETTER</small></span></a><p>精準操控，穩定輸出。<br />準備好迎接下一場勝利。</p><span>© 2025 NEXUS GEAR LAB</span></footer>
 
+    <Transition name="fade">
+      <div v-if="detailOpen" class="detail-backdrop" @click.self="closeProductDetails">
+        <section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
+          <button type="button" class="detail-close" aria-label="關閉商品詳情" @click="closeProductDetails">×</button>
+          <div v-if="detailLoading" class="detail-state" role="status">正在載入商品詳情...</div>
+          <div v-else-if="detailError" class="detail-state detail-error" role="alert">
+            <p>{{ detailError }}</p>
+            <button type="button" class="detail-secondary" @click="openProductDetails(detailProductId)">重新載入</button>
+          </div>
+          <div v-else-if="detailProduct" class="detail-layout">
+            <div class="detail-image"><img :src="imageUrl(detailProduct.imageUrl || detailProduct.imagesUrl?.[0])" :alt="detailProduct.title" /></div>
+            <div class="detail-copy">
+              <p class="eyebrow">{{ detailProduct.category }}</p>
+              <h2 id="product-detail-title">{{ detailProduct.title }}</h2>
+              <p v-if="detailProduct.description" class="detail-description">{{ detailProduct.description }}</p>
+              <p v-if="detailProduct.content" class="detail-content">{{ detailProduct.content }}</p>
+              <p v-if="!detailProduct.description && !detailProduct.content" class="detail-content">尚無詳細商品說明。</p>
+              <div class="detail-price"><del v-if="detailProduct.origin_price > detailProduct.price">NT$ {{ Number(detailProduct.origin_price).toLocaleString() }}</del><strong>NT$ {{ Number(detailProduct.price).toLocaleString() }}</strong></div>
+              <label class="detail-quantity">選購數量
+                <select v-model.number="detailQuantity">
+                  <option v-for="quantity in 10" :key="quantity" :value="quantity">{{ quantity }} {{ detailProduct.unit || "件" }}</option>
+                </select>
+              </label>
+              <p class="detail-subtotal">小計 <strong>NT$ {{ detailTotal.toLocaleString() }}</strong></p>
+              <div class="detail-actions">
+                <button type="button" class="detail-secondary" @click="closeProductDetails">繼續瀏覽</button>
+                <button type="button" class="detail-primary" :disabled="isCartUpdating" @click="addDetailToCart">{{ isCartUpdating ? "處理中..." : "加入購物袋" }}</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Transition>
     <Transition name="toast"><div v-if="notice" class="toast-message">✳ &nbsp;{{ notice }}</div></Transition>
     <Transition name="fade"><div v-if="cartOpen" class="drawer-backdrop" @click.self="cartOpen = false"><aside class="cart-drawer"><div class="drawer-heading"><div><p class="eyebrow">YOUR LOADOUT</p><h2>裝備清單 <span>({{ cartCount }})</span></h2></div><button class="close-button" @click="cartOpen = false" aria-label="關閉裝備清單">×</button></div><div v-if="cart.length" class="cart-items"><article v-for="item in cart" :key="item.id" class="cart-item"><img :src="imageUrl(item.image, 220)" :alt="item.name" /><div class="cart-item-copy"><span>{{ item.category }}</span><h3>{{ item.name }}</h3><strong>NT$ {{ item.lineTotal.toLocaleString() }}</strong><div class="quantity"><button :disabled="isCartUpdating" @click="changeQuantity(item, -1)">−</button><span>{{ item.quantity }}</span><button :disabled="isCartUpdating" @click="changeQuantity(item, 1)">＋</button></div></div></article></div><div v-else class="cart-empty"><span>✳</span><p>裝備清單還是空的。<br />挑選合適裝備，升級你的遊戲體驗。</p><button @click="cartOpen = false">探索電競裝備 →</button></div><div v-if="cart.length" class="cart-summary"><div><span>小計</span><strong>NT$ {{ cartTotal.toLocaleString() }}</strong></div><small>結帳金額依購物車 API 計算</small><button :disabled="isCartUpdating" @click="router.push('/checkout')">前往結帳 <span>→</span></button></div></aside></div></Transition>
   </div>
@@ -178,4 +249,8 @@ onUnmounted(() => window.removeEventListener("focus", loadProducts));
 .storefront .cart-drawer{background:#0d121b;border-left:1px solid #4deaff45}.storefront .drawer-heading{border-color:#94b7d533}.storefront .drawer-heading .eyebrow{color:#61eaff}.storefront .drawer-heading h2{font-family:'DM Sans','Noto Sans TC',sans-serif}.storefront .close-button{color:#d9e9fa}.storefront .cart-item{border-color:#94b7d526}.storefront .cart-item-copy>strong,.storefront .cart-summary>div strong{color:#64eaff}.storefront .quantity button{border-color:#4deaff65;color:#6feeff}.storefront .cart-summary{border-color:#94b7d540}.storefront .cart-summary>button,.storefront .cart-empty button{background:linear-gradient(100deg,#4deaff,#a56bff);font-weight:700}.storefront .toast-message{background:#101b29;color:#7cf0ff;border:1px solid #4deaff79;box-shadow:0 0 30px #4deaff32}
 .storefront .reload-products{margin-top:14px;padding:9px 15px;border:1px solid #4deaff80;background:#111b28;color:#63eaff;cursor:pointer}
 @media(max-width:620px){.storefront .hero{height:520px}.storefront .hero h1{font-size:43px}.storefront .hero-shade{background:linear-gradient(90deg,#080b12f2,#0a0e19bc 75%,#090d168c)}.storefront .shop-section{padding-top:60px}.storefront .product-card{padding:6px}.storefront .value-strip>div>span{color:#60eaff}}
+
+.detail-trigger{display:block;margin-top:7px;padding:0;border:0;background:none;color:#63eaff;font:11px inherit;text-align:left;cursor:pointer}.detail-trigger:hover{text-decoration:underline}.detail-trigger:disabled{opacity:.5;cursor:wait}
+.detail-backdrop{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:24px;background:#030711d9;backdrop-filter:blur(7px)}.detail-modal{position:relative;width:min(900px,100%);max-height:min(88vh,760px);overflow:auto;background:linear-gradient(145deg,#111a27,#090e17);border:1px solid #4deaff70;box-shadow:0 24px 90px #000b,0 0 35px #4deaff19;color:#edf7ff}.detail-close{position:absolute;z-index:2;top:12px;right:14px;width:38px;height:38px;border:1px solid #7794ae55;background:#0b111bdc;color:#e9f5ff;font:28px/1 sans-serif;cursor:pointer}.detail-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:34px;padding:34px}.detail-image{min-height:390px;background:#0c121c;display:grid;place-items:center}.detail-image img{display:block;width:100%;max-height:520px;object-fit:contain}.detail-copy{padding:17px 7px 8px}.detail-copy .eyebrow{margin-bottom:13px;color:#58eaff}.detail-copy h2{margin:0 0 17px;color:#f1f7ff;font-size:26px;line-height:1.45}.detail-description{color:#c2d0df;font-size:15px;line-height:1.8}.detail-content{color:#91a4ba;font-size:13px;line-height:1.9;white-space:pre-line}.detail-price{display:flex;align-items:center;gap:14px;margin:22px 0;color:#63eaff;font-size:21px;font-weight:700}.detail-price del{color:#8291a3;font-size:14px;font-weight:400}.detail-quantity{display:grid;gap:8px;color:#c7d5e4;font-size:13px}.detail-quantity select{width:100%;padding:11px 12px;border:1px solid #536a83;background:#0b111b;color:#edf7ff;font:14px inherit}.detail-subtotal{display:flex;justify-content:space-between;margin:16px 0;color:#b7c7d8}.detail-subtotal strong{color:#63eaff;font-size:18px}.detail-actions{display:flex;gap:10px;margin-top:20px}.detail-primary,.detail-secondary{flex:1;padding:12px;border:1px solid #4deaff8a;cursor:pointer;font:13px inherit}.detail-primary{background:linear-gradient(100deg,#4deaff,#a56bff);color:#071018;font-weight:700}.detail-primary:disabled{opacity:.55;cursor:wait}.detail-secondary{background:transparent;color:#d6e5f5}.detail-state{min-height:320px;display:grid;place-content:center;gap:12px;padding:35px;text-align:center;color:#a9bed3}.detail-error{color:#ffb0b8}.detail-error p{margin:0}
+@media(max-width:680px){.detail-backdrop{padding:12px}.detail-layout{grid-template-columns:1fr;gap:18px;padding:20px}.detail-image{min-height:220px;max-height:35vh}.detail-image img{max-height:35vh}.detail-copy{padding:4px}.detail-copy h2{font-size:21px}.detail-state{min-height:240px}}
 </style>
