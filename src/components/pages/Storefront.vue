@@ -253,4 +253,17 @@ onUnmounted(() => window.removeEventListener("focus", loadProducts));
 .detail-trigger{display:block;margin-top:7px;padding:0;border:0;background:none;color:#63eaff;font:11px inherit;text-align:left;cursor:pointer}.detail-trigger:hover{text-decoration:underline}.detail-trigger:disabled{opacity:.5;cursor:wait}
 .detail-backdrop{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:24px;background:#030711d9;backdrop-filter:blur(7px)}.detail-modal{position:relative;width:min(900px,100%);max-height:min(88vh,760px);overflow:auto;background:linear-gradient(145deg,#111a27,#090e17);border:1px solid #4deaff70;box-shadow:0 24px 90px #000b,0 0 35px #4deaff19;color:#edf7ff}.detail-close{position:absolute;z-index:2;top:12px;right:14px;width:38px;height:38px;border:1px solid #7794ae55;background:#0b111bdc;color:#e9f5ff;font:28px/1 sans-serif;cursor:pointer}.detail-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:34px;padding:34px}.detail-image{min-height:390px;background:#0c121c;display:grid;place-items:center}.detail-image img{display:block;width:100%;max-height:520px;object-fit:contain}.detail-copy{padding:17px 7px 8px}.detail-copy .eyebrow{margin-bottom:13px;color:#58eaff}.detail-copy h2{margin:0 0 17px;color:#f1f7ff;font-size:26px;line-height:1.45}.detail-description{color:#c2d0df;font-size:15px;line-height:1.8}.detail-content{color:#91a4ba;font-size:13px;line-height:1.9;white-space:pre-line}.detail-price{display:flex;align-items:center;gap:14px;margin:22px 0;color:#63eaff;font-size:21px;font-weight:700}.detail-price del{color:#8291a3;font-size:14px;font-weight:400}.detail-quantity{display:grid;gap:8px;color:#c7d5e4;font-size:13px}.detail-quantity select{width:100%;padding:11px 12px;border:1px solid #536a83;background:#0b111b;color:#edf7ff;font:14px inherit}.detail-subtotal{display:flex;justify-content:space-between;margin:16px 0;color:#b7c7d8}.detail-subtotal strong{color:#63eaff;font-size:18px}.detail-actions{display:flex;gap:10px;margin-top:20px}.detail-primary,.detail-secondary{flex:1;padding:12px;border:1px solid #4deaff8a;cursor:pointer;font:13px inherit}.detail-primary{background:linear-gradient(100deg,#4deaff,#a56bff);color:#071018;font-weight:700}.detail-primary:disabled{opacity:.55;cursor:wait}.detail-secondary{background:transparent;color:#d6e5f5}.detail-state{min-height:320px;display:grid;place-content:center;gap:12px;padding:35px;text-align:center;color:#a9bed3}.detail-error{color:#ffb0b8}.detail-error p{margin:0}
 @media(max-width:680px){.detail-backdrop{padding:12px}.detail-layout{grid-template-columns:1fr;gap:18px;padding:20px}.detail-image{min-height:220px;max-height:35vh}.detail-image img{max-height:35vh}.detail-copy{padding:4px}.detail-copy h2{font-size:21px}.detail-state{min-height:240px}}
+
+/* Keep the storefront background within the viewport and give the mobile
+   header enough room for its brand, search field, and cart control. */
+.storefront{width:100%;min-width:0;overflow-x:clip}
+@media(max-width:620px){
+  .storefront .store-header{height:auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:10px;padding:12px 4%}
+  .storefront .brand{grid-column:1;grid-row:1;min-width:0}
+  .storefront .main-nav{display:none}
+  .storefront .header-actions{display:contents}
+  .storefront .search-box{grid-column:1/-1;grid-row:2;width:100%;min-width:0}
+  .storefront .search-box input{width:100%;min-width:0}
+  .storefront .bag-button{grid-column:2;grid-row:1;padding:0 2px}
+}
 </style>
